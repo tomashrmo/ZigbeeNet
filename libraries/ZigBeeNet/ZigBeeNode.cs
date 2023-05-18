@@ -12,7 +12,7 @@ using static ZigBeeNet.ZDO.Field.NodeDescriptor;
 using ZigBeeNet.Transaction;
 using System.Linq;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet
 {
@@ -26,7 +26,7 @@ namespace ZigBeeNet
         /// <summary>
         /// ILogger for logging events for this class
         /// </summary>
-        private static ILogger _logger = LogManager.GetLog<ZigBeeNode>();
+        //private static ILogger _logger = LogManager.GetLog<ZigBeeNode>();
 
         /// <summary>
         /// Gets the current state for the node
@@ -271,7 +271,7 @@ namespace ZigBeeNet
             {
                 _bindingTable.Clear();
                 _bindingTable.UnionWith(bindingTable);
-                _logger.LogDebug("{Address}: Binding table updated: {BindingTable}", IeeeAddress, bindingTable);
+                //Console.WriteLine("{Address}: Binding table updated: {BindingTable}", IeeeAddress, bindingTable);
             }
         }
 
@@ -360,7 +360,7 @@ namespace ZigBeeNet
                         listener.DeviceAdded(endpoint);
                     }).ContinueWith((t) =>
                     {
-                        _logger.LogError(t.Exception, "Error: {Exception}", t.Exception.Message);
+                        //Console.WriteLine($"Error {t.Exception}");
                     }, TaskContinuationOptions.OnlyOnFaulted);
                 }
             }
@@ -385,7 +385,7 @@ namespace ZigBeeNet
                         listener.DeviceUpdated(endpoint);
                     }).ContinueWith((t) =>
                     {
-                        _logger.LogError(t.Exception, "Error: {Exception}", t.Exception.Message);
+                        //Console.WriteLine($"Error {t.Exception}");
                     }, TaskContinuationOptions.OnlyOnFaulted);
                 }
             }
@@ -411,7 +411,7 @@ namespace ZigBeeNet
                             listener.DeviceRemoved(endpoint);
                         }).ContinueWith((t) =>
                         {
-                            _logger.LogError(t.Exception, "Error: {Exception}", t.Exception.Message);
+                            //Console.WriteLine($"Error {t.Exception}");
                         }, TaskContinuationOptions.OnlyOnFaulted);
                     }
                 }
@@ -490,7 +490,7 @@ namespace ZigBeeNet
         {
             if (!node.IeeeAddress.Equals(IeeeAddress))
             {
-                _logger.LogDebug("{IeeeAddress}: Ieee address inconsistent during update <>{NodeIeeeAddress}", IeeeAddress, node.IeeeAddress);
+                //Console.WriteLine("{IeeeAddress}: Ieee address inconsistent during update <>{NodeIeeeAddress}", IeeeAddress, node.IeeeAddress);
                 return false;
             }
 
@@ -498,28 +498,28 @@ namespace ZigBeeNet
 
             if (node.NodeState != ZigBeeNodeState.UNKNOWN && NodeState != node.NodeState)
             {
-                _logger.LogDebug("{IeeeAddress}: Node state updated from {NodeState} to {NewNodeState}", IeeeAddress, NodeState, node.NodeState);
+                //Log.Debug("{IeeeAddress}: Node state updated from {NodeState} to {NewNodeState}", IeeeAddress, NodeState, node.NodeState);
                 NodeState = node.NodeState;
                 updated = true;
             }
 
             if (NetworkAddress != 0 && !NetworkAddress.Equals(node.NetworkAddress))
             {
-                _logger.LogDebug("{IeeeAddress}: Network address updated from {NetworkAddress} to {NodeNetworkAddress}", IeeeAddress, NetworkAddress, node.NetworkAddress);
+                //Console.WriteLine("{IeeeAddress}: Network address updated from {NetworkAddress} to {NodeNetworkAddress}", IeeeAddress, NetworkAddress, node.NetworkAddress);
                 updated = true;
                 NetworkAddress = node.NetworkAddress;
             }
 
             if (node.NodeDescriptor != null && (NodeDescriptor == null || !NodeDescriptor.Equals(node.NodeDescriptor)))
             {
-                _logger.LogDebug("{IeeeAddress}: Node descriptor updated", IeeeAddress);
+                //Console.WriteLine("{IeeeAddress}: Node descriptor updated", IeeeAddress);
                 updated = true;
                 NodeDescriptor = node.NodeDescriptor;
             }
 
             if (node.PowerDescriptor != null && (PowerDescriptor == null || !PowerDescriptor.Equals(node.PowerDescriptor)))
             {
-                _logger.LogDebug("{IeeeAddress}: Power descriptor updated", IeeeAddress);
+                //Console.WriteLine("{IeeeAddress}: Power descriptor updated", IeeeAddress);
                 updated = true;
                 PowerDescriptor = node.PowerDescriptor;
             }
@@ -528,7 +528,7 @@ namespace ZigBeeNet
             {
                 if (!_associatedDevices.SetEquals(node._associatedDevices))
                 {
-                    _logger.LogDebug("{IeeeAddress}: Associated devices updated", IeeeAddress);
+                    //Console.WriteLine("{IeeeAddress}: Associated devices updated", IeeeAddress);
                     updated = true;
                     _associatedDevices.Clear();
                     _associatedDevices.UnionWith(node._associatedDevices);
@@ -539,7 +539,7 @@ namespace ZigBeeNet
             {
                 if (!_bindingTable.SetEquals(node._bindingTable))
                 {
-                    _logger.LogDebug("{IeeeAddress}: Binding table updated", IeeeAddress);
+                    //Console.WriteLine("{IeeeAddress}: Binding table updated", IeeeAddress);
                     updated = true;
                     _bindingTable.Clear();
                     _bindingTable.UnionWith(node._bindingTable);
@@ -550,7 +550,7 @@ namespace ZigBeeNet
             {
                 if (!_neighbors.SetEquals(node._neighbors))
                 {
-                    _logger.LogDebug("{IeeeAddress}: Neighbors updated", IeeeAddress);
+                    //Console.WriteLine("{IeeeAddress}: Neighbors updated", IeeeAddress);
                     updated = true;
                     _neighbors.Clear();
                     _neighbors.UnionWith(node._neighbors);
@@ -561,7 +561,7 @@ namespace ZigBeeNet
             {
                 if (!_routes.SetEquals(node._routes))
                 {
-                    _logger.LogDebug("{IeeeAddress}: Routes updated", IeeeAddress);
+                    //Console.WriteLine("{IeeeAddress}: Routes updated", IeeeAddress);
                     updated = true;
                     _routes.Clear();
                     _routes.UnionWith(node._routes);
@@ -577,7 +577,7 @@ namespace ZigBeeNet
                 {
                     continue;
                 }
-                _logger.LogDebug("{IeeeAddress}: Endpoint {EndpointId} added", IeeeAddress, endpoint.Key);
+                //Console.WriteLine("{IeeeAddress}: Endpoint {EndpointId} added", IeeeAddress, endpoint.Key);
                 updated = true;
                 _endpoints[endpoint.Key] = endpoint.Value;
             }
@@ -659,7 +659,7 @@ namespace ZigBeeNet
             {
                 return false;
             }
-            _logger.LogDebug("{IeeeAddress}: Node state updated from {oldState} to {newState}", IeeeAddress, NodeState, state);
+            //Console.WriteLine("{IeeeAddress}: Node state updated from {oldState} to {newState}", IeeeAddress, _nodeState, state);
 
             NodeState = state;
             return true;

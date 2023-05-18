@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet.Internal
 {
@@ -12,7 +12,7 @@ namespace ZigBeeNet.Internal
         /// <summary>
         /// ILogger for logging events for this class
         /// </summary>
-        private static ILogger _logger = LogManager.GetLog<ZigBeeCommandNotifier>();
+        //private static ILogger _logger = LogManager.GetLog<ZigBeeCommandNotifier>();
 
         private readonly object _lock = new object();
 
@@ -64,9 +64,9 @@ namespace ZigBeeNet.Internal
                     {
                         commandListener.CommandReceived(command);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        _logger.LogError("Error during the notification of commandListeners. {Exception}", ex.Message);
+                        //Console.WriteLine("Error during the notification of commandListeners. {0}", ex);
                     }
                 });
             }

@@ -4,13 +4,13 @@ using System.Text;
 using ZigBeeNet.Hardware.TI.CC2531.Packet;
 using ZigBeeNet.Hardware.TI.CC2531.Packet.ZDO;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet.Hardware.TI.CC2531.Network
 {
     internal class NetworkStateListener : IAsynchronousCommandListener
     {
-        static private readonly ILogger _logger = LogManager.GetLog<NetworkStateListener>();
+        //static private readonly ILogger _logger = LogManager.GetLog<NetworkStateListener>();
         public event EventHandler<DriverStatus> OnStateChanged;
         
         public void ReceivedAsynchronousCommand(ZToolPacket packet)
@@ -20,7 +20,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                 switch(stateInd.Status)
                 {
                     case DeviceState.Started_as_ZigBee_Coordinator:
-                        _logger.LogDebug("Started as Zigbee Coordinator");
+                        //Console.WriteLine("Started as Zigbee Coordinator");
                         OnStateChanged?.Invoke(this, DriverStatus.NETWORK_READY);
                         break;
                     default:

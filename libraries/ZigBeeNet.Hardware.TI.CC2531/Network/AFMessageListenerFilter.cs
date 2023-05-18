@@ -4,13 +4,13 @@ using System.Text;
 using ZigBeeNet.Hardware.TI.CC2531.Packet;
 using ZigBeeNet.Hardware.TI.CC2531.Packet.AF;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet.Hardware.TI.CC2531.Network
 {
     internal class AFMessageListenerFilter : IAsynchronousCommandListener
     {
-        static private readonly ILogger _logger = LogManager.GetLog<AFMessageListenerFilter>();
+        //static private readonly ILogger _logger = LogManager.GetLog<AFMessageListenerFilter>();
 
         private List<IApplicationFrameworkMessageListener> _listeners;
 
@@ -30,10 +30,10 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             {
                 if(_listeners.Count == 0)
                 {
-                    _logger.LogWarning($"Received AF_INCOMING_MSG but no listeners. Message was from {msg.SrcAddr} and cluster {msg.ClusterId} to endpoint {msg.DstEndpoint}. Data: {msg}");
+                    Console.WriteLine($"Received AF_INCOMING_MSG but no listeners. Message was from {msg.SrcAddr} and cluster {msg.ClusterId} to endpoint {msg.DstEndpoint}. Data: {msg}");
                 } else
                 {
-                    _logger.LogTrace($"Received AF_INCOMING_MSG from {msg.SrcAddr} and cluster {msg.ClusterId} to endpoint {msg.DstEndpoint}. Data: {msg}");
+                    Console.WriteLine($"Received AF_INCOMING_MSG from {msg.SrcAddr} and cluster {msg.ClusterId} to endpoint {msg.DstEndpoint}. Data: {msg}");
                 }
                 List<IApplicationFrameworkMessageListener> localCopy;
                 lock(_listeners)
@@ -49,7 +49,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                         listener.Notify(msg);
                     } catch (Exception e)
                     {
-                        _logger.LogError(e, "Error AF message listener notify: {Exception}", e.Message);
+                        //Console.WriteLine($"Error AF message listener notify {e.Message}");
                     }
                 }
             }

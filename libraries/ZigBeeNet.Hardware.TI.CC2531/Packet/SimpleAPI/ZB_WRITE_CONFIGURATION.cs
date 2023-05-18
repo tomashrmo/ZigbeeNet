@@ -44,6 +44,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet.SimpleAPI
             ZCD_NV_SECURITY_MODE = 0x64,
             ZCD_NV_USE_DEFAULT_TC = 0x6D,
             ZCD_NV_USERDESC = 0x81,
+            ZCD_NV_NWKKEY = 0x82,
             ZCD_NV_PANID = 0x83,
             ZCD_NV_CHANLIST = 0x84,
             ZCD_NV_LOGICAL_TYPE = 0x87,

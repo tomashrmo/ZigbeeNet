@@ -13,13 +13,13 @@ using ZigBeeNet.Transport;
 using ZigBeeNet.ZCL;
 using static ZigBeeNet.ZigBeeNetworkManager;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet.Hardware.TI.CC2531
 {
     public class ZigBeeDongleTiCc2531 : IZigBeeTransportTransmit, IApplicationFrameworkMessageListener, IAsynchronousCommandListener
     {
-        static private readonly ILogger _logger = LogManager.GetLog<ZigBeeDongleTiCc2531>();
+        //static private readonly ILogger _logger = LogManager.GetLog<ZigBeeDongleTiCc2531>();
         private NetworkManager _networkManager;
         private IZigBeeTransportReceive _zigBeeNetworkReceive;
 
@@ -88,7 +88,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531
 
         public ZigBeeStatus Initialize()
         {
-            _logger.LogDebug("CC2531 transport initialize");
+            //Console.WriteLine("CC2531 transport initialize");
 
             // This basically just initialises the hardware so we can communicate with the 2531
             VersionString = _networkManager.Startup();
@@ -163,7 +163,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531
                     apsFrame = ZdoManagementLeave.Create(packet);
                     break;
                 default:
-                    //_logger.LogDebug($"Unhandled SerialPacket type {packet.CMD}");
+                    //Console.WriteLine($"Unhandled SerialPacket type {packet.CMD}");
                     break;
             }
 
@@ -219,7 +219,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531
 
         public ZigBeeStatus Startup(bool reinitialize)
         {
-            _logger.LogDebug("CC2531 transport startup");
+            //Console.WriteLine("CC2531 transport startup");
 
             // Add listeners for ZCL and ZDO received messages
             _networkManager.AddAFMessageListener(this);
@@ -246,7 +246,14 @@ namespace ZigBeeNet.Hardware.TI.CC2531
                 Thread.Sleep(50);
             }
 
-            CreateEndpoint(1, 0x104);
+            try
+            {
+                CreateEndpoint(1, 0x104);
+            }
+            catch
+            {
+                return ZigBeeStatus.INVALID_STATE;
+            }
 
             return ZigBeeStatus.SUCCESS;
         }
@@ -261,7 +268,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531
                 }
                 else
                 {
-                    _logger.LogInformation($"No endpoint registered for profileId={profileId}");
+                    //Console.WriteLine($"No endpoint registered for profileId={profileId}");
                     return byte.MaxValue;
                 }
             }
@@ -277,7 +284,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531
                 }
                 else
                 {
-                    _logger.LogInformation("No endpoint {Endpoint} registered", endpointId);
+                    //Console.WriteLine("No endpoint {0} registered", endpointId);
                     return ushort.MaxValue;
                 }
             }
@@ -285,30 +292,30 @@ namespace ZigBeeNet.Hardware.TI.CC2531
 
         private byte CreateEndpoint(byte endpointId, ushort profileId)
         {
-            _logger.LogTrace("Registering a new endpoint {Endpoint} for profile {Profile}", endpointId, profileId);
+            //Console.WriteLine("Registering a new endpoint {0} for profile {1}", endpointId, profileId);
 
             AF_REGISTER_SRSP result;
             result = _networkManager.SendAFRegister(new AF_REGISTER(endpointId, profileId, 0, 0,
                     _supportedInputClusters.ToArray(), _supportedOutputClusters.ToArray()));
             // FIX We should retry only when Status != 0xb8 ( Z_APS_DUPLICATE_ENTRY )
-            if (result.Status != 0)
+            if (result == null || result.Status != 0)
             {
                 // TODO We should provide a workaround for the maximum number of registered EndPoint
                 // For example, with the CC2480 we could reset the dongle
-                throw new Exception("Unable create a new Endpoint. AF_REGISTER command failed with " + result.Status);
+                throw new Exception("Unable create a new Endpoint. AF_REGISTER command failed with ");
             }
 
             _sender2Endpoint[profileId] = endpointId;
             _Endpoint2Profile[endpointId] = profileId;
 
-            _logger.LogDebug("Registered endpoint {Endpoint} with profile: {Profile}", endpointId, profileId);
+            //Console.WriteLine("Registered endpoint {0} with profile: {1}", endpointId, profileId);
 
             return endpointId;
         }
 
         public ZigBeeStatus SetZigBeeChannel(ZigBeeChannel channel)
         {
-            return _networkManager.SetZigBeeChannel((byte)channel) ? ZigBeeStatus.SUCCESS : ZigBeeStatus.FAILURE;
+            return _networkManager.SetZigBeeChannel((byte)channel.GetChannelNum()) ? ZigBeeStatus.SUCCESS : ZigBeeStatus.FAILURE;
         }
 
         public ZigBeeStatus SetZigBeePanId(ushort panId)
@@ -360,7 +367,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531
 
                         default:
                             configuration.SetResult(option, ZigBeeStatus.UNSUPPORTED);
-                            _logger.LogDebug("Unsupported configuration option \"{Option}\" in CC2531 dongle", option);
+                            //Console.WriteLine("Unsupported configuration option \"{0}\" in CC2531 dongle", option);
                             break;
                     }
                 }

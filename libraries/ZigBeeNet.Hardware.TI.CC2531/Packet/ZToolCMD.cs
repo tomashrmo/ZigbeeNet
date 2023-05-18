@@ -527,10 +527,40 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
         SYS_VERSION_RESPONSE = 0x6102,
 
         /// <summary>
-         /// This message is sent to the target in order to test the functions defined
-         /// for individual applications (which internally use attributes and cluster
-         /// IDs from various device descriptions).
-         /// </summary>
+        /// Read NV memory.
+        /// </summary>
+        SYS_OSAL_NVREAD = 0x211C,
+
+        /// <summary>
+        /// Response for SYS_NVREAD
+        /// </summary>
+        SYS_OSAL_NVREAD_RESPONSE = 0x611C,
+
+        /// <summary>
+        /// Write NV memory.
+        /// </summary>
+        SYS_OSAL_NVWRITE = 0x211D,
+
+        /// <summary>
+        /// Response for SYS_NVWRITE
+        /// </summary>
+        SYS_OSAL_NVWRITE_RESPONSE = 0x611D,
+
+        /// <summary>
+        /// Ask for the device's version string.
+        /// </summary>
+        SYS_OSAL_NVLENGTH = 0x2113,
+
+        /// <summary>
+        /// Response for SYS_VERSION
+        /// </summary>
+        SYS_OSAL_NVLENGTH_RESPONSE = 0x6113,
+
+        /// <summary>
+        /// This message is sent to the target in order to test the functions defined
+        /// for individual applications (which internally use attributes and cluster
+        /// IDs from various device descriptions).
+        /// </summary>
         USERTEST_REQUEST = 0xb51,
 
         /// <summary>
@@ -1145,6 +1175,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
          /// This message is the default message for error status.
          /// </summary>
         ZDO_STATUS_ERROR_RSP = 0x45c3,
+
+        /// <summary>
+        /// This message is an indication to inform host device the receipt of a source route to a given device.
+        /// </summary>
+        ZDO_SRC_RTG_IND = 0x45c4,
 
         /// <summary>
          /// ZDO Trust Center end device announce indication.

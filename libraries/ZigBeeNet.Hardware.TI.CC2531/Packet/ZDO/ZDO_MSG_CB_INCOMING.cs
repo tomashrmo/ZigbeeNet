@@ -6,12 +6,12 @@ using ZigBeeNet.Hardware.TI.CC2531.Util;
 using ZigBeeNet.ZCL;
 using ZigBeeNet.ZCL.Protocol;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 namespace ZigBeeNet.Hardware.TI.CC2531.Packet.ZDO
 {
     public class ZDO_MSG_CB_INCOMING : ZToolPacket
     {
-        static private readonly ILogger _logger = LogManager.GetLog<ZDO_MSG_CB_INCOMING>();
+        //static private readonly ILogger _logger = LogManager.GetLog<ZDO_MSG_CB_INCOMING>();
 
         public static Dictionary<ushort, Type> ClusterToRSP { get; private set; }
 
@@ -91,13 +91,13 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet.ZDO
             ZToolPacket newPacket = null;
             byte[] frame;
 
-            _logger.LogTrace("Translating ZDO cluster callback {ClusterId}", ClusterId);
+            //Console.WriteLine("Translating ZDO cluster callback {0}", ClusterId);
 
             Type newPacketClass = ClusterToRSP[ClusterId];
 
             if (newPacketClass == null)
             {
-                _logger.LogError("Unhandled ZDO cluster callback {Cluster}", ClusterId);
+                //Console.WriteLine("Unhandled ZDO cluster callback {0}", ClusterId);
                 return this;
             }
             else if (newPacketClass == typeof(ZDO_NWK_ADDR_RSP) || newPacketClass == typeof(ZDO_IEEE_ADDR_RSP))
@@ -186,7 +186,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet.ZDO
             }
             catch (Exception e)
             {
-                _logger.LogError("Error constructing response packet {Exception}", e.Message);
+                //Console.WriteLine("Error constructing response packet {0}", e);
                 return this;
             }
 

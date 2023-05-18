@@ -86,10 +86,10 @@ namespace ZigBeeNet.ZDO.Field
             UNKNOWN = 0xff
         }
 
-        public CurrentPowerModeType CurrentPowerMode { get; private set; } = CurrentPowerModeType.UNKNOWN;
-        public PowerSourceType AvailablePowerSources { get; private set; } = default;
-        public PowerSourceType CurrentPowerSource { get; private set; } = PowerSourceType.UNKNOWN;
-        public PowerLevelType PowerLevel { get; private set; } = PowerLevelType.UNKNOWN;
+        public CurrentPowerModeType CurrentPowerMode { get; set; } = CurrentPowerModeType.UNKNOWN;
+        public PowerSourceType AvailablePowerSources { get; set; } = default;
+        public PowerSourceType CurrentPowerSource { get; set; } = PowerSourceType.UNKNOWN;
+        public PowerLevelType PowerLevel { get; set; } = PowerLevelType.UNKNOWN;
 
         public PowerDescriptor()
         {

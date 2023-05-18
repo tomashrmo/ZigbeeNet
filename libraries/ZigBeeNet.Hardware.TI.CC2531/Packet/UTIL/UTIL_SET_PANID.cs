@@ -25,8 +25,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet.UTIL
 
         byte[] framedata = new byte[1];
         //Inversed because at first glance order wasn't valid
-        framedata[0] = this.PanID.GetLSB();
-        framedata[1] = this.PanID.GetMSB();
+        //framedata[0] = this.PanID.GetLSB();
+        //framedata[1] = this.PanID.GetMSB();
+        //Do not inverse - as if it was initialized with different PANID reinitialization will create different network
+        framedata[0] = this.PanID.GetMSB();
+        framedata[1] = this.PanID.GetLSB();
 
         BuildPacket((ushort)ZToolCMD.UTIL_SET_PANID, framedata);
     }

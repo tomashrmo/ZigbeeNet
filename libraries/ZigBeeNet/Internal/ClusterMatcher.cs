@@ -6,7 +6,7 @@ using ZigBeeNet.ZCL;
 using ZigBeeNet.ZDO;
 using ZigBeeNet.ZDO.Command;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet.Internal
 {
@@ -20,7 +20,7 @@ namespace ZigBeeNet.Internal
         /// <summary>
         /// ILogger for logging events for this class
         /// </summary>
-        private static ILogger _logger = LogManager.GetLog<ClusterMatcher>();
+        //private static ILogger _logger = LogManager.GetLog<ClusterMatcher>();
 
         private ZigBeeNetworkManager _networkManager;
         private byte _localEndpointId;
@@ -31,7 +31,7 @@ namespace ZigBeeNet.Internal
 
         public ClusterMatcher(ZigBeeNetworkManager networkManager, byte localEndpointId, int profileId)
         {
-            _logger.LogDebug("ClusterMatcher starting");
+            //Console.WriteLine("ClusterMatcher starting");
             _networkManager = networkManager;
             _localEndpointId = localEndpointId;
             _profileId = profileId;
@@ -46,13 +46,13 @@ namespace ZigBeeNet.Internal
 
         public void AddClientCluster(ushort cluster)
         {
-            _logger.LogDebug($"ClusterMatcher adding client cluster {cluster}");
+            //Log.Debug($"ClusterMatcher adding client cluster {cluster}");
             _clientClusters.Add(cluster);
         }
 
         public void AddServerCluster(ushort cluster)
         {
-            _logger.LogDebug($"ClusterMatcher adding server cluster {cluster}");
+            //Log.Debug($"ClusterMatcher adding server cluster {cluster}");
             _serverClusters.Add(cluster);
         }
 
@@ -61,17 +61,17 @@ namespace ZigBeeNet.Internal
             // If we have local servers matching the request, then we need to respond
             if (command is MatchDescriptorRequest matchRequest)
             {
-                _logger.LogDebug("{ExtPanId}: ClusterMatcher received request {Match}", _networkManager.ZigBeeExtendedPanId, matchRequest);
+                //Console.WriteLine("{ExtPanId}: ClusterMatcher received request {Match}", _networkManager.ZigBeeExtendedPanId, matchRequest);
                 if (matchRequest.ProfileId != _profileId)
                 {
-                    _logger.LogDebug("{ExtPanId}: ClusterMatcher no match to profileId", _networkManager.ZigBeeExtendedPanId);
+                    //Log.Debug("{ExtPanId}: ClusterMatcher no match to profileId", _networkManager.ZigBeeExtendedPanId);
                     return;
                 }
 
                 if (matchRequest.NwkAddrOfInterest != _networkManager.LocalNwkAddress
                     && !ZigBeeBroadcastDestinationHelper.IsBroadcast(matchRequest.NwkAddrOfInterest))
                 {
-                    _logger.LogDebug("{ExtPanId}: ClusterMatcher no match to local address", _networkManager.ZigBeeExtendedPanId);
+                    //Log.Debug("{ExtPanId}: ClusterMatcher no match to local address", _networkManager.ZigBeeExtendedPanId);
                     return;
                 }
 
@@ -80,7 +80,7 @@ namespace ZigBeeNet.Internal
                 if (matchRequest.InClusterList.Intersect(_serverClusters).Count() == 0
                         && matchRequest.OutClusterList.Intersect(_clientClusters).Count() == 0)
                 {
-                    _logger.LogDebug("{ExtPanId}: ClusterMatcher no match", _networkManager.ZigBeeExtendedPanId);
+                    //Console.WriteLine("{ExtPanId}: ClusterMatcher no match", _networkManager.ZigBeeExtendedPanId);
                     return;
                 }
 
@@ -92,7 +92,7 @@ namespace ZigBeeNet.Internal
                 matchResponse.NwkAddrOfInterest = _networkManager.LocalNwkAddress;
                 matchResponse.TransactionId = matchRequest.TransactionId;
                 matchResponse.DestinationAddress = command.SourceAddress;
-                _logger.LogDebug("{ExtPanId}: ClusterMatcher sending match {Response}", _networkManager.ZigBeeExtendedPanId, matchResponse);
+                //Console.WriteLine("{ExtPanId}: ClusterMatcher sending match {Response}", _networkManager.ZigBeeExtendedPanId, matchResponse);
                 _networkManager.SendCommand(matchResponse);
             }
         }

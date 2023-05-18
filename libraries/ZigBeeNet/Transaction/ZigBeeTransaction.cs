@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using ZigBeeNet;
 using ZigBeeNet.ZCL;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet.Transaction
 {
@@ -19,7 +19,7 @@ namespace ZigBeeNet.Transaction
         /// <summary>
         /// ILogger for logging events for this class
         /// </summary>
-        private static ILogger _logger = LogManager.GetLog<ZigBeeTransaction>();
+        //private static ILogger _logger = LogManager.GetLog<ZigBeeTransaction>();
 
         private ZigBeeNetworkManager _networkManager;
         private IZigBeeTransactionMatcher _responseMatcher;
@@ -80,7 +80,7 @@ namespace ZigBeeNet.Transaction
             else
             {
                 /* Timeout */
-                _logger.LogDebug("Transaction timeout: {Command}", _command);
+                Console.WriteLine("Transaction timeout: {0}", _command);
                 commandResult = new CommandResult();
             }
             _networkManager.RemoveCommandListener(this);
@@ -101,7 +101,7 @@ namespace ZigBeeNet.Transaction
                 {
                     _sendTransactionTask.SetResult(new CommandResult(receivedCommand));
 
-                    _logger.LogDebug("Transaction complete: {Command}", _command);
+                    //Console.WriteLine("Transaction complete: {Command}", _command);
                 }
             }
         }

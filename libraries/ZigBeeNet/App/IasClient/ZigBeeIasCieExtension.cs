@@ -10,7 +10,7 @@ using ZigBeeNet.App;
 using ZigBeeNet.App.Discovery;
 using ZigBeeNet.ZDO.Command;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 using ZigBeeNet.ZCL.Clusters;
 
 namespace ZigBeeNet.App.IasClient

@@ -1,5 +1,5 @@
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -25,7 +25,7 @@ namespace ZigBeeNet.Database
         /// <summary>
         /// ILogger for logging events for this class
         /// </summary>
-        private static ILogger _logger = LogManager.GetLog<ZigBeeNetworkDatabaseManager>();
+        //private static ILogger _logger = LogManager.GetLog<ZigBeeNetworkDatabaseManager>();
 
         /// <summary>
         ///The default time(in milliseconds) to defer writes.This will prevent multiple writes to a single node within this period.
@@ -123,11 +123,11 @@ namespace ZigBeeNet.Database
         {
             if (DataStore == null) 
             {
-                _logger.LogDebug("Data store: Undefined so network is not cleared.");
+                //Console.WriteLine("Data store: Undefined so network is not cleared.");
                 return;
             }
 
-            _logger.LogDebug("Data store:  Clearing all nodes.");
+            //Console.WriteLine("Data store:  Clearing all nodes.");
             ISet<IeeeAddress> nodes = DataStore.ReadNetworkNodes();
             foreach (IeeeAddress nodeAddress in nodes) 
             {
@@ -143,7 +143,7 @@ namespace ZigBeeNet.Database
         {
             if (DataStore == null) 
             {
-                _logger.LogDebug("Data store: Undefined so network is not restored.");
+                //Console.WriteLine("Data store: Undefined so network is not restored.");
                 return;
             }
 
@@ -154,11 +154,11 @@ namespace ZigBeeNet.Database
                 ZigBeeNodeDao nodeDao = DataStore.ReadNode(nodeAddress);
                 if (nodeDao == null) 
                 {
-                    _logger.LogDebug("{IeeeAddress}: Data store: Node was not found in database.", nodeAddress);
+                    //Console.WriteLine("{IeeeAddress}: Data store: Node was not found in database.", nodeAddress);
                     continue;
                 }
                 node.SetDao(nodeDao);
-                _logger.LogDebug("{IeeeAddress}: Data store: Node was restored.", nodeAddress);
+                //Console.WriteLine("{IeeeAddress}: Data store: Node was restored.", nodeAddress);
                 _networkManager.UpdateNode(node);
             }
 
@@ -177,7 +177,7 @@ namespace ZigBeeNet.Database
         /// </summary>
         public void Shutdown() 
         {
-            _logger.LogDebug("Data store: Shutting down.");
+            //Console.WriteLine("Data store: Shutting down.");
             _networkManager.RemoveNetworkNodeListener(this);
 
             _nodesToSave.CompleteAdding();
@@ -221,7 +221,7 @@ namespace ZigBeeNet.Database
                 {
                     if (DateTime.Now - timer.CreatedTime > TimeSpan.FromMilliseconds(_deferredWriteTimeout))
                     {
-                        _logger.LogDebug("{IeeeAddress}: Data store: Maximum deferred time reached.", node.IeeeAddress);
+                        //Console.WriteLine("{IeeeAddress}: Data store: Maximum deferred time reached.", node.IeeeAddress);
 
                         // Run the write immediately.
                         deferredDelay = 1;
@@ -243,7 +243,7 @@ namespace ZigBeeNet.Database
                     timer.Start();
                 }
 
-                _logger.LogDebug("{IeeeAddress}: Data store: Deferring write for {deferredDelay}ms.", node.IeeeAddress, deferredDelay);
+                //Console.WriteLine("{IeeeAddress}: Data store: Deferring write for {deferredDelay}ms.", node.IeeeAddress, deferredDelay);
             }
         }
 
@@ -259,9 +259,9 @@ namespace ZigBeeNet.Database
                     _nodesToSave.Add(timer.Node);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogDebug(ex, "Data store: error in timer elapsed event");
+                //Console.WriteLine(ex, "Data store: error in timer elapsed event");
             }
         }
 
@@ -274,18 +274,18 @@ namespace ZigBeeNet.Database
                 {
                     try
                     {
-                        _logger.LogDebug("{IeeeAddress}: Data store: Writing node.", node.IeeeAddress);
+                        //Console.WriteLine("{IeeeAddress}: Data store: Writing node.", node.IeeeAddress);
                         DataStore.WriteNode(node.GetDao());
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        _logger.LogDebug(ex, "{IeeeAddress}: Data store: error while writing node", node.IeeeAddress);
+                        //Console.WriteLine(ex, "{IeeeAddress}: Data store: error while writing node", node.IeeeAddress);
                     }
                 }
             }
-            catch(Exception ex)
+            catch(Exception)
             {
-                _logger.LogDebug(ex, "Data store: Write Node Loop error");
+                //Console.WriteLine(ex, "Data store: Write Node Loop error");
             }
         }
     }

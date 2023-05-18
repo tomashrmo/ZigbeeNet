@@ -72,7 +72,8 @@ namespace ZigBeeNet
         CHANNEL_23 = 0x00800000,
         CHANNEL_24 = 0x01000000,
         CHANNEL_25 = 0x02000000,
-        CHANNEL_26 = 0x04000000
+        CHANNEL_26 = 0x04000000,
+        ALL_CHANNELS = 0x07FFF800,
     }
 
     public static class ZigBeeChannelExtensions

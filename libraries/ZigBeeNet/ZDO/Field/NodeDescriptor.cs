@@ -11,20 +11,20 @@ namespace ZigBeeNet.ZDO.Field
     {
         private int _apsFlags;
 
-        public byte BufferSize { get; private set; }
-        public bool ComplexDescriptorAvailable { get; private set; }
-        public ushort ManufacturerCode { get; private set; }
-        public LogicalType LogicalNodeType { get; private set; } = LogicalType.UNKNOWN;
-        public ServerCapabilitiesType ServerCapabilities { get; private set; }
+        public byte BufferSize { get; set; }
+        public bool ComplexDescriptorAvailable { get; set; }
+        public ushort ManufacturerCode { get; set; }
+        public LogicalType LogicalNodeType { get; set; } = LogicalType.UNKNOWN;
+        public ServerCapabilitiesType ServerCapabilities { get; set; }
         public ushort IncomingTransferSize { get; set; }
-        public ushort OutgoingTransferSize { get; private set; }
-        public bool IsuserDescriptorAvailable { get; private set; }
+        public ushort OutgoingTransferSize { get; set; }
+        public bool IsuserDescriptorAvailable { get; set; }
 
-        public FrequencyBandType FrequencyBands { get; private set; }
-        public MacCapabilitiesType MacCapabilities { get; private set; }
-        public bool IsextendedEndpointListAvailable { get; private set; }
-        public bool ExtendedSimpleDescriptorListAvailable { get; private set; }
-        public int StackCompliance { get; private set; }
+        public FrequencyBandType FrequencyBands { get; set; }
+        public MacCapabilitiesType MacCapabilities { get; set; }
+        public bool IsextendedEndpointListAvailable { get; set; }
+        public bool ExtendedSimpleDescriptorListAvailable { get; set; }
+        public int StackCompliance { get; set; }
 
         private const int R21_BITMASK = 0xFE00;
         private const int R21_BITSHIFT = 9;

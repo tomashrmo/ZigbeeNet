@@ -14,12 +14,12 @@ using ZigBeeNet.Hardware.TI.CC2531.Util;
 using ZigBeeNet.Security;
 using ZigBeeNet.ZCL;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 namespace ZigBeeNet.Hardware.TI.CC2531.Network
 {
     public class NetworkManager
     {
-        static private readonly ILogger _logger = LogManager.GetLog<NetworkManager>();
+        //static private readonly ILogger _logger = LogManager.GetLog<NetworkManager>();
 
         private const int DEFAULT_TIMEOUT = 8000;
         private const string TIMEOUT_KEY = "zigbee.driver.cc2531.timeout";
@@ -95,6 +95,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
         private ulong _ieeeAddress = ulong.MaxValue;
         private ushort _currentPanId = ushort.MaxValue;
+        private string _currentVersion = null;
 
         private Dictionary<Type, Thread> _conversation3Way = new Dictionary<Type, Thread>();
         private object _stateSync = new object();
@@ -160,7 +161,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             }
 
             _state = DriverStatus.CREATED;
-            _logger.LogTrace("Initializing hardware.");
+            //Console.WriteLine("Initializing hardware.");
 
             // Open the hardware port
             SetState(DriverStatus.HARDWARE_INITIALIZING);
@@ -183,12 +184,12 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             string version = GetStackVersion();
             if (version == null)
             {
-                _logger.LogDebug("Failed to get CC2531 version");
+                //Console.WriteLine("Failed to get CC2531 version");
 
             }
             else
             {
-                _logger.LogInformation("CC2531 version is {Version}", version);
+                //Console.WriteLine("CC2531 version is {0}", version);
             }
 
             return version;
@@ -198,17 +199,17 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         {
             if (_state == DriverStatus.CLOSED)
             {
-                _logger.LogDebug("Already CLOSED");
+                //Console.WriteLine("Already CLOSED");
                 return;
             }
             if (_state == DriverStatus.NETWORK_READY)
             {
-                _logger.LogDebug("Closing NETWORK");
+                //Console.WriteLine("Closing NETWORK");
                 SetState(DriverStatus.HARDWARE_READY);
             }
             if (_state == DriverStatus.HARDWARE_OPEN || _state == DriverStatus.HARDWARE_READY || _state == DriverStatus.NETWORK_INITIALIZING)
             {
-                _logger.LogDebug("Closing HARDWARE");
+                //Console.WriteLine("Closing HARDWARE");
                 _commandInterface.Close();
                 SetState(DriverStatus.CREATED);
             }
@@ -219,13 +220,13 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         {
             if (_commandInterface == null)
             {
-                _logger.LogError("Command interface must be configured");
+                //Console.WriteLine("Command interface must be configured");
                 return false;
             }
 
             if (!_commandInterface.Open())
             {
-                _logger.LogError("Failed to open the dongle.");
+                //Console.WriteLine("Failed to open the dongle.");
                 return false;
             }
 
@@ -234,7 +235,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
         public bool InitializeZigBeeNetwork(bool cleanStatus)
         {
-            _logger.LogTrace("Initializing network.");
+            //Console.WriteLine("Initializing network.");
 
             SetState(DriverStatus.NETWORK_INITIALIZING);
 
@@ -246,12 +247,12 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
             if (!CreateZigBeeNetwork())
             {
-                _logger.LogError("Failed to start zigbee network.");
+                //Console.WriteLine("Failed to start zigbee network.");
                 Shutdown();
                 return false;
             }
             // if (checkZigBeeNetworkConfiguration()) {
-            // _logger.LogError("Dongle configuration does not match the specified configuration.");
+            // //Console.WriteLine("Dongle configuration does not match the specified configuration.");
             // shutdown();
             // return false;
             // }
@@ -261,11 +262,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         private bool CreateZigBeeNetwork()
         {
             CreateCustomDevicesOnDongle();
-            _logger.LogDebug($"Creating network as {_mode}");
+            //Console.WriteLine($"Creating network as {_mode}");
 
             ushort ALL_CLUSTERS = 0xFFFF;
 
-            _logger.LogTrace("Reset seq: Trying MSG_CB_REGISTER");
+            //Console.WriteLine("Reset seq: Trying MSG_CB_REGISTER");
             ZDO_MSG_CB_REGISTER_SRSP responseCb = (ZDO_MSG_CB_REGISTER_SRSP)SendSynchronous(
                     new ZDO_MSG_CB_REGISTER(ALL_CLUSTERS));
             if (responseCb == null)
@@ -273,10 +274,27 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                 return false;
             }
 
-            ZB_WRITE_CONFIGURATION_RSP responseCfg;
-            responseCfg = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
-                    new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_ZDO_DIRECT_CB, new byte[] { 1 }));
-            if (responseCfg == null)
+            SYS_OSAL_NVLENGTH_RESPONSE lenResponse = (SYS_OSAL_NVLENGTH_RESPONSE)SendSynchronous(new SYS_OSAL_NVLENGTH((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_ZDO_DIRECT_CB));
+
+            SYS_OSAL_NVREAD_RESPONSE cbResponse = (SYS_OSAL_NVREAD_RESPONSE)SendSynchronous(new SYS_OSAL_NVREAD((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_ZDO_DIRECT_CB));
+
+            if (cbResponse != null && cbResponse.Status == 0 && lenResponse.Len == 1)
+            {
+                if (cbResponse.Value[0] != 1 )
+                {
+                    //ZB_WRITE_CONFIGURATION_RSP responseCfg;
+                    //responseCfg = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
+                    //        new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_ZDO_DIRECT_CB, new byte[] { 1 }));
+                    SYS_OSAL_NVWRITE_RESPONSE responseCfg = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                            new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_ZDO_DIRECT_CB, new byte[] { 1 }));
+
+                    if (responseCfg == null)
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
             {
                 return false;
             }
@@ -293,122 +311,129 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             switch (response.Status)
             {
                 case 0:
-                    _logger.LogInformation("Initialized ZigBee network with existing network state.");
+                    //Console.WriteLine("Initialized ZigBee network with existing network state.");
                     return true;
                 case 1:
-                    _logger.LogInformation("Initialized ZigBee network with new or reset network state.");
+                    //Console.WriteLine("Initialized ZigBee network with new or reset network state.");
                     return true;
                 case 2:
-                    _logger.LogWarning("Initializing ZigBee network failed.");
+                    //Console.WriteLine("Initializing ZigBee network failed.");
                     return false;
                 default:
-                    _logger.LogError("Unexpected response _state for ZDO_STARTUP_FROM_APP {response}", response.Status);
+                    //Console.WriteLine("Unexpected response _state for ZDO_STARTUP_FROM_APP {0}", response.Status);
                     return false;
             }
         }
 
         private bool ConfigureZigBeeNetwork()
         {
-            _logger.LogDebug("Resetting network stack.");
-
+            //Console.WriteLine("Resetting network stack.");
+            
             // Make sure we start clearing configuration and _state
-            if (!DongleSetStartupOption(STARTOPT_CLEAR_CONFIG | STARTOPT_CLEAR_STATE))
+            if (!DongleSetStartupOption((byte)(STARTOPT_CLEAR_CONFIG | STARTOPT_CLEAR_STATE)))
             {
-                _logger.LogError("Unable to set clean _state for dongle");
+                //Console.WriteLine("Unable to set clean _state for dongle");
                 return false;
             }
-            _logger.LogDebug("Changing the Network Mode to {Mode}.", _mode);
+            //Console.WriteLine("Changing the Network Mode to {0}.", _mode);
             if (!DongleSetNetworkMode())
             {
-                _logger.LogError("Unable to set NETWORK_MODE for ZigBee Network");
+                //Console.WriteLine("Unable to set NETWORK_MODE for ZigBee Network");
                 return false;
             }
             else
             {
-                _logger.LogTrace("NETWORK_MODE set");
+                //Console.WriteLine("NETWORK_MODE set");
             }
             // A dongle reset is needed to put into effect
             // configuration clear and network _mode.
-            _logger.LogDebug("Resetting CC2531 dongle.");
+            //Console.WriteLine("Resetting CC2531 dongle.");
             if (!DongleReset())
             {
-                _logger.LogError("Unable to reset dongle");
+                //Console.WriteLine("Unable to reset dongle");
                 return false;
             }
 
-            _logger.LogDebug("Setting channel to {Channel}.", _channel);
+            // Disable clearing configuration and _state
+            if (!DongleSetStartupOption((byte)(0x00)))
+            {
+                //Console.WriteLine("Unable to set clean _state for dongle");
+                return false;
+            }
+
+            //Console.WriteLine("Setting channel to {0}.", _channel);
             if (!DongleSetChannel())
             {
-                _logger.LogError("Unable to set CHANNEL for ZigBee Network");
+                //Console.WriteLine("Unable to set CHANNEL for ZigBee Network");
                 return false;
             }
             else
             {
-                _logger.LogTrace("CHANNEL set");
+                //Console.WriteLine("CHANNEL set");
             }
 
-            _logger.LogDebug("Setting PAN to {Pan}.", (_pan & 0x0000ffff).ToString("X4"));
+            //Console.WriteLine("Setting PAN to {0}.", (_pan & 0x0000ffff).ToString("X4"));
             if (!DongleSetPanId())
             {
-                _logger.LogError("Unable to set PANID for ZigBee Network");
+                //Console.WriteLine("Unable to set PANID for ZigBee Network");
                 return false;
             }
             else
             {
-                _logger.LogTrace("PANID set");
+                //Console.WriteLine("PANID set");
             }
             if (_extendedPanId != null)
             {
-                _logger.LogDebug("Setting Extended PAN ID to {PanId}.", _extendedPanId);
+                //Console.WriteLine("Setting Extended PAN ID to {0}.", _extendedPanId);
                 if (!DongleSetExtendedPanId())
                 {
-                    _logger.LogError("Unable to set EXT_PANID for ZigBee Network");
+                    //Console.WriteLine("Unable to set EXT_PANID for ZigBee Network");
                     return false;
                 }
                 else
                 {
-                    _logger.LogTrace("EXT_PANID set");
+                    //Console.WriteLine("EXT_PANID set");
                 }
             }
             if (_networkKey != null)
             {
-                _logger.LogDebug("Setting NETWORK_KEY.");
+                //Console.WriteLine("Setting NETWORK_KEY.");
                 if (!DongleSetNetworkKey())
                 {
-                    _logger.LogError("Unable to set NETWORK_KEY for ZigBee Network");
+                    //Console.WriteLine("Unable to set NETWORK_KEY for ZigBee Network");
                     return false;
                 }
                 else
                 {
-                    _logger.LogTrace("NETWORK_KEY set");
+                    //Console.WriteLine("NETWORK_KEY set");
                 }
             }
-            _logger.LogDebug("Setting Distribute Network Key to {Key}.", _distributeNetworkKey);
+            //Console.WriteLine("Setting Distribute Network Key to {0}.", _distributeNetworkKey);
             if (!DongleSetDistributeNetworkKey())
             {
-                _logger.LogError("Unable to set DISTRIBUTE_NETWORK_KEY for ZigBee Network");
+                //Console.WriteLine("Unable to set DISTRIBUTE_NETWORK_KEY for ZigBee Network");
                 return false;
             }
             else
             {
-                _logger.LogTrace("DISTRIBUTE_NETWORK_KEY set");
+                //Console.WriteLine("DISTRIBUTE_NETWORK_KEY set");
             }
-            _logger.LogDebug("Setting Security Mode to {Mode}.", _securityMode);
+            //Console.WriteLine("Setting Security Mode to {0}.", _securityMode);
             if (!DongleSetSecurityMode())
             {
-                _logger.LogError("Unable to set SECURITY_MODE for ZigBee Network");
+                //Console.WriteLine("Unable to set SECURITY_MODE for ZigBee Network");
                 return false;
             }
             else
             {
-                _logger.LogTrace("SECURITY_MODE set");
+                //Console.WriteLine("SECURITY_MODE set");
             }
             return true;
         }
 
         private void SetState(DriverStatus value)
         {
-            _logger.LogTrace("{State} --> {Value}", _state, value);
+            //Console.WriteLine("{0} --> {1}", _state, value);
 
             lock (_stateSync)
             {
@@ -438,7 +463,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             {
                 while (_state == DriverStatus.CREATED || _state == DriverStatus.CLOSED)
                 {
-                    _logger.LogDebug("Waiting for hardware to become ready");
+                    //Console.WriteLine("Waiting for hardware to become ready");
                     try
                     {
                         _hardwareSync.Wait();
@@ -459,7 +484,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             {
                 while (_state != DriverStatus.NETWORK_READY && _state != DriverStatus.CLOSED && !timedOut)
                 {
-                    _logger.LogDebug("Waiting for network to become ready");
+                    //Console.WriteLine("Waiting for network to become ready");
                     try
                     {
                         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -555,7 +580,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         //    RESPONSE result = (RESPONSE)SendSynchronous(request);
         //    if (result == null)
         //    {
-        //        _logger.LogError("{} timed out waiting for synchronous local response.", request.GetType().Name);
+        //        //Console.WriteLine("{} timed out waiting for synchronous local response.", request.GetType().Name);
         //    }
         //    return result;
         //}
@@ -572,17 +597,17 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         //    final BlockingCommandReceiver waiter = new BlockingCommandReceiver(ZToolCMD.ZDO_MGMT_PERMIT_JOIN_RSP,
         //            _commandInterface);
 
-        //    _logger.LogTrace("Sending {}", request);
+        //    //Console.WriteLine("Sending {}", request);
         //    ZToolPacket response = SendSynchronous(request);
         //    if (response == null)
         //    {
-        //        _logger.LogError("{} timed out waiting for synchronous local response.", request.GetType().Name);
+        //        //Console.WriteLine("{} timed out waiting for synchronous local response.", request.GetType().Name);
         //        waiter.cleanup();
         //        return null;
         //    }
         //    else
         //    {
-        //        _logger.LogError("{} timed out waiting for asynchronous remote response.", request.GetType().Name);
+        //        //Console.WriteLine("{} timed out waiting for asynchronous remote response.", request.GetType().Name);
         //        result = (RESPONSE)waiter.getCommand(TIMEOUT);
         //        unLock3WayConversation(request);
         //        return result;
@@ -602,19 +627,19 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                 {
                     if (!requestor.IsAlive)
                     {
-                        _logger.LogError("Thread {} whom requested {} DIED before unlocking the conversation");
-                        _logger.LogDebug("The thread {} who was waiting for {} to complete DIED, so we have to remove the lock");
+                        //Console.WriteLine("Thread whom requested DIED before unlocking the conversation");
+                        //Console.WriteLine("The thread who was waiting for to complete DIED, so we have to remove the lock");
                         _conversation3Way[clz] = null;
                         break;
                     }
-                    _logger.LogTrace("{Thread} is waiting for {Clz} to complete which was issued by {Requestor} to complete", new object[] { Thread.CurrentThread, clz, requestor });
+                    //Console.WriteLine("{0} is waiting for {1} to complete which was issued by {Requestor} to complete", new object[] { Thread.CurrentThread, clz, requestor });
                     try
                     {
                         _hardwareSync.Wait();
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError("Error in 3 way conversation: {Exception}", ex.Message);
+                        //Console.WriteLine("Error in 3 way conversation.", ex);
                     }
                 }
                 _conversation3Way[clz] = Thread.CurrentThread;
@@ -641,11 +666,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             }
             if (requestor == null)
             {
-                _logger.LogError("LOCKING BROKEN - SOMEONE RELEASE THE LOCK WITHOUT LOCKING IN ADVANCE for {Clz}", clz);
+                //Console.WriteLine("LOCKING BROKEN - SOMEONE RELEASE THE LOCK WITHOUT LOCKING IN ADVANCE for {0}", clz);
             }
             else if (requestor != Thread.CurrentThread)
             {
-                _logger.LogError("Thread {Thread} stolen the answer of {Clz} waited by {Requestor}", new object[] { Thread.CurrentThread, clz, requestor });
+                //Console.WriteLine("Thread {0} stolen the answer of {1} waited by {2}", new object[] { Thread.CurrentThread, clz, requestor });
             }
         }
 
@@ -659,7 +684,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             }
             catch (IOException e)
             {
-                _logger.LogError("Failed to send bootloader magic byte: {Exception}", e.Message);
+                //Console.WriteLine("Failed to send bootloader magic byte {0}", e);
             }
 
             SYS_RESET_RESPONSE response = (SYS_RESET_RESPONSE)waiter.GetCommand(ResetTimeout);
@@ -669,9 +694,14 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
         private string GetStackVersion()
         {
+            if (_currentVersion != null)
+            {
+                return _currentVersion;
+            }
+
             if (!WaitForHardware())
             {
-                _logger.LogInformation("Failed to reach the {Status} level: GetStackVerion() failed", DriverStatus.NETWORK_READY);
+                //Console.WriteLine("Failed to reach the {0} level: GetStackVerion() failed", DriverStatus.NETWORK_READY);
                 return null;
             }
 
@@ -693,7 +723,8 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                 builder.Append(response.HwRev);
                 builder.Append(" Transport=");
                 builder.Append(response.TransportRev);
-                return builder.ToString();
+                _currentVersion = builder.ToString();
+                return _currentVersion;
             }
         }
 
@@ -707,7 +738,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             }
             catch (IOException e)
             {
-                _logger.LogError("Failed to send SYS_RESET: {Exception}", e.Message);
+                //Console.WriteLine("Failed to send SYS_RESET {0}", e);
                 return false;
             }
 
@@ -715,11 +746,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
             if (response == null)
             {
-                _logger.LogWarning("Dongle reset failed. Assuming bootloader is running and sending magic byte 0x{BootLoaderMagicByte}.", BOOTLOADER_MAGIC_BYTE.ToString("X2"));
+                //Console.WriteLine("Dongle reset failed. Assuming bootloader is running and sending magic byte 0x{0}.", BOOTLOADER_MAGIC_BYTE.ToString("X2"));
 
                 if (!BootloaderGetOut(BOOTLOADER_MAGIC_BYTE))
                 {
-                    _logger.LogWarning("Attempt to get out from bootloader failed.");
+                    //Console.WriteLine("Attempt to get out from bootloader failed.");
 
                     return false;
                 }
@@ -732,22 +763,41 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         {
             if ((mask & ~(STARTOPT_CLEAR_CONFIG | STARTOPT_CLEAR_STATE)) != 0)
             {
-                _logger.LogWarning("Invalid ZCD_NV_STARTUP_OPTION mask {Mask}.", mask.ToString("X8"));
+                //Console.WriteLine("Invalid ZCD_NV_STARTUP_OPTION mask {0}.", mask.ToString("X8"));
                 return false;
             }
 
-            ZB_WRITE_CONFIGURATION_RSP response;
-            response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
-                    new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_STARTUP_OPTION, BitConverter.GetBytes(mask)));
-
-            if (response == null || response.Status != 0)
+            var version = this.GetStackVersion();
+            if (version.Contains("Product=1"))
             {
-                _logger.LogWarning("Couldn't set ZCD_NV_STARTUP_OPTION mask {Mask}", mask.ToString("X8"));
-                return false;
+                SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_STARTUP_OPTION, new byte[] { (byte)(mask & 0x000000FF) }));
+
+                if (response == null || response.Status != 0)
+                {
+                    //Console.WriteLine("Couldn't set ZCD_NV_STARTUP_OPTION mask {0}", mask.ToString("X8"));
+                    return false;
+                }
+                else
+                {
+                    //Console.WriteLine("Set ZCD_NV_STARTUP_OPTION mask {0}", mask.ToString("X8"));
+                }
             }
             else
             {
-                _logger.LogTrace("Set ZCD_NV_STARTUP_OPTION mask {Mask}", mask.ToString("X8"));
+                ZB_WRITE_CONFIGURATION_RSP response;
+                response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
+                        new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_STARTUP_OPTION, BitConverter.GetBytes(mask)));
+
+                if (response == null || response.Status != 0)
+                {
+                    //Console.WriteLine("Couldn't set ZCD_NV_STARTUP_OPTION mask {0}", mask.ToString("X8"));
+                    return false;
+                }
+                else
+                {
+                    //Console.WriteLine("Set ZCD_NV_STARTUP_OPTION mask {0}", mask.ToString("X8"));
+                }
             }
 
             return true;
@@ -799,18 +849,21 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                 channelMask[3] = ZNP_CHANNEL_DEFAULT3;
             }
 
-            //_logger.LogTrace("Setting the channel to {}{}{}{}",
+            //Console.WriteLine("Setting the channel to {}{}{}{}",
             //        new Object[] { Integer.toHexString(channelMask[0]), Integer.toHexString(channelMask[1]),
             //            Integer.toHexString(channelMask[2]), Integer.toHexString(channelMask[3]) });
 
-            ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
-                    new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_CHANLIST, channelMask));
+            //ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
+            //        new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_CHANLIST, channelMask));
+            SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_CHANLIST, channelMask));
 
             return response != null && response.Status == 0;
         }
 
         private bool DongleSetChannel()
         {
+            // CHECK THIS
             byte[] channelMask = BuildChannelMask(_channel);
 
             return DongleSetChannel(channelMask);
@@ -818,8 +871,10 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
         private bool DongleSetNetworkMode()
         {
-            ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
-                    ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_LOGICAL_TYPE, new byte[] { (byte)_mode }));
+            //ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
+            //        ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_LOGICAL_TYPE, new byte[] { (byte)_mode }));
+            SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_LOGICAL_TYPE, new byte[] { (byte)_mode }));
 
             return response != null && response.Status == 0;
         }
@@ -828,42 +883,81 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         {
             _currentPanId = ushort.MaxValue;
 
-            ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
-                    new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PANID, BitConverter.GetBytes(_pan)));
+            //ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
+            //        new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PANID, BitConverter.GetBytes(_pan)));
+            SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PANID, BitConverter.GetBytes(_pan)));
 
             return response != null && response.Status == 0;
         }
 
         private bool DongleSetExtendedPanId()
         {
-            ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
-                    new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_EXTPANID, _extendedPanId.PanId));
+            //ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(
+            //        new ZB_WRITE_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_EXTPANID, _extendedPanId.PanId));
+            SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_EXTPANID, _extendedPanId.PanId));
 
             return response != null && response.Status == 0;
         }
 
         private bool DongleSetNetworkKey()
         {
-            ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
-                    ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEY, _networkKey));
+            var version = this.GetStackVersion();
+            if (version.Contains("Product=1"))
+            {
+                SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEY, _networkKey));
 
-            return response != null && response.Status == 0;
+                return response != null && response.Status == 0;
+            }
+            else
+            {
+                ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
+                   ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEY, _networkKey));
+
+                return response != null && response.Status == 0;
+            }
         }
 
         private bool DongleSetDistributeNetworkKey()
         {
-            ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
+            var version = this.GetStackVersion();
+            if (version.Contains("Product=1"))
+            {
+                SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEYS_ENABLE, new byte[] { _distributeNetworkKey ? (byte)0x00 : (byte)0x01 }));
+
+                return response != null && response.Status == 0;
+            }
+            else
+            {
+                ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
                     ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEYS_ENABLE, new byte[] { _distributeNetworkKey ? (byte)0x00 : (byte)0x01 }));
 
-            return response != null && response.Status == 0;
+                return response != null && response.Status == 0;
+            }
         }
 
         private bool DongleSetSecurityMode()
         {
-            ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
+            var version = this.GetStackVersion();
+            if (version.Contains("Product=1"))
+            {
+                // Deprecated Item as there is only one security mode supported now Z3.0
+                //SYS_OSAL_NVWRITE_RESPONSE response = (SYS_OSAL_NVWRITE_RESPONSE)SendSynchronous(
+                //    new SYS_OSAL_NVWRITE((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_SECURITY_MODE, new byte[] { (byte)_securityMode }));
+
+                //return response != null && response.Status == 0;
+                return true;
+            }
+            else
+            {
+                ZB_WRITE_CONFIGURATION_RSP response = (ZB_WRITE_CONFIGURATION_RSP)SendSynchronous(new ZB_WRITE_CONFIGURATION(
                     ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_SECURITY_MODE, new byte[] { (byte)_securityMode }));
 
-            return response != null && response.Status == 0;
+                return response != null && response.Status == 0;
+            }
         }
 
         /// <summary>
@@ -886,19 +980,22 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             ZToolPacket[] response = new ZToolPacket[] { null };
             int sending = 1;
 
-            _logger.LogTrace("{Request} sending as synchronous command.", request.GetType().Name);
+            //Console.WriteLine("{0} sending as synchronous command.", request.GetType().Name);
 
             SynchronousCommandListener listener = new SynchronousCommandListener();
 
-            listener.OnResponseReceived += (object sender, ZToolPacket packet) =>
+            void OnResponseReceived(object sender, ZToolPacket packet)
             {
                 response[0] = packet;
                 _hardwareSync.Set();
+                listener.OnResponseReceived -= OnResponseReceived;
             };
+
+            listener.OnResponseReceived += OnResponseReceived;
 
             //    public void receivedCommandResponse(ZToolPacket packet)
             //    {
-            //        _logger.LogTrace(" {} received as synchronous command.", packet.GetType().Name);
+            //        //Console.WriteLine(" {} received as synchronous command.", packet.GetType().Name);
             //        synchronized(response) {
             //            // Do not set response[0] again.
             //            response[0] = packet;
@@ -917,15 +1014,15 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                     }
                     catch (IOException e)
                     {
-                        _logger.LogError("Synchronous command send failed due to IO exception: {Exception}", e.Message);
+                        //Console.WriteLine("Synchronous command send failed due to IO exception. {0}", e);
                         break;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError("Synchronous command send failed due to unexpected exception: {Exception}", ex.Message);
+                        //Console.WriteLine("Synchronous command send failed due to unexpected exception. {0}", ex);
                     }
 
-                    _logger.LogTrace("{Request} sent (synchronous command, attempt {Count}).", request.GetType().Name, sending);
+                    //Console.WriteLine("{0} sent (synchronous command, attempt {1}).", request.GetType().Name, sending);
 
                     long wakeUpTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + timeout;
 
@@ -933,7 +1030,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                     {
                         long sleeping = wakeUpTime - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                        _logger.LogTrace("Waiting for synchronous command up to {Sleeping}ms till {WakeUpTime} Unixtime", sleeping, wakeUpTime);
+                        //Console.WriteLine("Waiting for synchronous command up to {0}ms till {1} Unixtime", sleeping, wakeUpTime);
 
                         if (sleeping <= 0)
                         {
@@ -946,17 +1043,17 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                         }
                         catch (Exception e)
                         {
-                            _logger.LogTrace("_hardwareSync.Wait() Exception" + Environment.NewLine + e.ToString());
+                            //Console.WriteLine("_hardwareSync.Wait() Exception {0}" + Environment.NewLine + e.ToString());
                         }
                     }
                     if (response[0] != null)
                     {
-                        _logger.LogTrace("{Request} --> {Response}", request.GetType().Name, response[0].GetType().Name);
+                        //Console.WriteLine("{0} --> {1}", request.GetType().Name, response[0].GetType().Name);
                         break; // Break out as we have response.
                     }
                     else
                     {
-                        _logger.LogDebug("{Request} executed and timed out while waiting for response.", request.GetType().Name);
+                        //Console.WriteLine("{0} executed and timed out while waiting for response.", request.GetType().Name);
                     }
                     if (ResendOnlyException)
                     {
@@ -964,14 +1061,14 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                     }
                     else
                     {
-                        _logger.LogDebug("Failed to send {Request} [attempt {Sending}]", request.GetType().Name, sending);
+                        //Console.WriteLine("Failed to send {0} [attempt {1}]", request.GetType().Name, sending);
                         sending++;
                     }
                 }
                 catch (Exception ignored)
                 {
-                    _logger.LogDebug("Failed to send {Request} [attempt {Sending}]", request.GetType().Name, sending);
-                    _logger.LogTrace("Sending operation failed due to ", ignored);
+                    //Console.WriteLine("Failed to send {0} [attempt {1}]", request.GetType().Name, sending);
+                    //Console.WriteLine("Sending operation failed due to ", ignored);
                     sending++;
                 }
             }
@@ -1048,25 +1145,21 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             {
                 if (_commandInterface.RemoveAsynchronousCommandListener(_afMessageListenerFilter))
                 {
-                    _logger.LogTrace("Removed AsynchrounsCommandListener {Type} to ZigBeeSerialInterface",
-                            _afMessageListenerFilter.GetType().Name);
+                    //Console.WriteLine("Removed AsynchrounsCommandListener {0} to ZigBeeSerialInterface",_afMessageListenerFilter.GetType().Name);
                 }
                 else
                 {
-                    _logger.LogWarning("Could not remove AsynchrounsCommandListener {} to ZigBeeSerialInterface",
-                            _afMessageListenerFilter.GetType().Name);
+                    //Console.WriteLine("Could not remove AsynchrounsCommandListener {0} to ZigBeeSerialInterface",_afMessageListenerFilter.GetType().Name);
                 }
             }
             if (result)
             {
-                _logger.LogTrace("Removed ApplicationFrameworkMessageListener {}:{}", listener,
-                        listener.GetType().Name);
+                //Console.WriteLine("Removed ApplicationFrameworkMessageListener {0}:{1}", listener, listener.GetType().Name);
                 return true;
             }
             else
             {
-                _logger.LogWarning("Could not remove ApplicationFrameworkMessageListener {}:{}", listener,
-                        listener.GetType().Name);
+                //Console.WriteLine("Could not remove ApplicationFrameworkMessageListener {0}:{1}", listener, listener.GetType().Name);
                 return false;
             }
         }
@@ -1090,13 +1183,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             {
                 if (_commandInterface.AddAsynchronousCommandListener(_afMessageListenerFilter))
                 {
-                    _logger.LogTrace("Added AsynchrounsCommandListener {} to ZigBeeSerialInterface",
-                            _afMessageListenerFilter.GetType().Name);
+                    //Console.WriteLine("Added AsynchrounsCommandListener {0} to ZigBeeSerialInterface",_afMessageListenerFilter.GetType().Name);
                 }
                 else
                 {
-                    _logger.LogTrace("Could not add AsynchrounsCommandListener {} to ZigBeeSerialInterface",
-                            _afMessageListenerFilter.GetType().Name);
+                    //Console.WriteLine("Could not add AsynchrounsCommandListener {0} to ZigBeeSerialInterface",_afMessageListenerFilter.GetType().Name);
                 }
             }
             lock (_messageListeners)
@@ -1104,7 +1195,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                 _messageListeners.Add(listener);
             }
 
-            _logger.LogTrace("Added ApplicationFrameworkMessageListener {}:{}", listener, listener.GetType().Name);
+            //Console.WriteLine("Added ApplicationFrameworkMessageListener {0}:{1}", listener, listener.GetType().Name);
 
             return true;
         }
@@ -1128,20 +1219,22 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         {
             if (!WaitForHardware())
             {
-                _logger.LogInformation("Failed to reach the {} level: getExtendedPanId() failed", DriverStatus.HARDWARE_READY);
+                //Console.WriteLine("Failed to reach the {0} level: getExtendedPanId() failed", DriverStatus.HARDWARE_READY);
                 return new ExtendedPanId();
             }
 
-            byte[] result = GetDeviceInfo(ZB_GET_DEVICE_INFO.DEV_INFO_TYPE.EXT_PAN_ID);
+            SYS_OSAL_NVLENGTH_RESPONSE lenResponse = (SYS_OSAL_NVLENGTH_RESPONSE)SendSynchronous(new SYS_OSAL_NVLENGTH((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_EXTPANID));
 
-            if (result == null)
+            SYS_OSAL_NVREAD_RESPONSE response = (SYS_OSAL_NVREAD_RESPONSE)SendSynchronous(new SYS_OSAL_NVREAD((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_EXTPANID));
+
+            if (response != null && response.Status == 0 && lenResponse.Len == 8)
             {
-                // luckily -1 (aka 0xffffffffffffffffL) is not a valid extended PAN ID value
-                return new ExtendedPanId();
+                return new ExtendedPanId(response.Value);
             }
             else
             {
-                return new ExtendedPanId(result);
+                //Console.WriteLine("Error reading zigbee network key: {0}" + response.Status);
+                return null;
             }
         }
 
@@ -1159,11 +1252,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
             if (!WaitForHardware())
             {
-                _logger.LogInformation("Failed to reach the {} level: getIeeeAddress() failed", DriverStatus.HARDWARE_READY);
+                //Console.WriteLine("Failed to reach the {0} level: getIeeeAddress() failed", DriverStatus.HARDWARE_READY);
                 return ulong.MaxValue;
             }
 
-            byte[] result = GetDeviceInfo(ZB_GET_DEVICE_INFO.DEV_INFO_TYPE.IEEE_ADDR);
+            var result = GetDeviceInfo(ZB_GET_DEVICE_INFO.DEV_INFO_TYPE.IEEE_ADDR);
 
             if (result == null)
             {
@@ -1171,7 +1264,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             }
             else
             {
-                _ieeeAddress = new IeeeAddress(result).Value;
+                _ieeeAddress = new IeeeAddress(result.IEEEAddr.Address).Value;
                 return _ieeeAddress;
             }
         }
@@ -1185,7 +1278,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         {
             if (!WaitForHardware())
             {
-                _logger.LogInformation("Failed to reach the {} level: getCurrentPanId() failed", DriverStatus.NETWORK_READY);
+                //Console.WriteLine("Failed to reach the {0} level: getCurrentPanId() failed", DriverStatus.NETWORK_READY);
                 return ushort.MaxValue;
             }
 
@@ -1194,15 +1287,19 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
                 return _currentPanId;
             }
 
-            byte[] result = GetDeviceInfo(ZB_GET_DEVICE_INFO.DEV_INFO_TYPE.PAN_ID);
-            if (result == null)
+            SYS_OSAL_NVLENGTH_RESPONSE lenResponse = (SYS_OSAL_NVLENGTH_RESPONSE)SendSynchronous(new SYS_OSAL_NVLENGTH((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PANID));
+
+            SYS_OSAL_NVREAD_RESPONSE response = (SYS_OSAL_NVREAD_RESPONSE)SendSynchronous(new SYS_OSAL_NVREAD((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PANID));
+
+            if (response != null && response.Status == 0 && lenResponse.Len == 2)
             {
-                return ushort.MaxValue;
+                _currentPanId = new ZToolAddress16(response.Value).Value;
+                return _currentPanId;
             }
             else
             {
-                _currentPanId = new ZToolAddress16(result).Value;
-                return _currentPanId;
+                //Console.WriteLine("Error reading zigbee network key: {0}" + response.Status);
+                return ushort.MaxValue;
             }
         }
 
@@ -1215,47 +1312,65 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
         {
             if (!WaitForHardware())
             {
-                _logger.LogInformation("Failed to reach the {Mode} level: GetCurrentChannel() failed", DriverStatus.HARDWARE_READY);
+                //Console.WriteLine("Failed to reach the {0} level: GetCurrentChannel() failed", DriverStatus.HARDWARE_READY);
                 return byte.MaxValue;
             }
 
-            byte[] result = GetDeviceInfo(ZB_GET_DEVICE_INFO.DEV_INFO_TYPE.CHANNEL);
-            if (result == null)
+            SYS_OSAL_NVLENGTH_RESPONSE lenResponse = (SYS_OSAL_NVLENGTH_RESPONSE)SendSynchronous(new SYS_OSAL_NVLENGTH((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_CHANLIST));
+
+            SYS_OSAL_NVREAD_RESPONSE response = (SYS_OSAL_NVREAD_RESPONSE)SendSynchronous(new SYS_OSAL_NVREAD((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_CHANLIST));
+
+            if (response != null && response.Status == 0 && lenResponse.Len == 4)
             {
-                return byte.MaxValue;
+                ZigBeeChannel zChannel = ZigBeeChannel.UNKNOWN;
+                try
+                {
+                    zChannel = (ZigBeeChannel)response.Value.ToUInt32();
+                }
+                catch
+                {
+
+                }
+                return (byte)zChannel.GetChannelNum();
             }
             else
             {
-                return result[0];
+                //Console.WriteLine("Error reading zigbee network key: {0}" + response.Status);
+                return byte.MaxValue;
             }
         }
 
-        private byte[] GetDeviceInfo(ZB_GET_DEVICE_INFO.DEV_INFO_TYPE type)
+        private UTIL_GET_DEVICE_INFO_RESPONSE GetDeviceInfo(ZB_GET_DEVICE_INFO.DEV_INFO_TYPE type)
         {
-            ZB_GET_DEVICE_INFO_RSP response = (ZB_GET_DEVICE_INFO_RSP)SendSynchronous(new ZB_GET_DEVICE_INFO(type));
+            //ZB_GET_DEVICE_INFO_RSP response = (ZB_GET_DEVICE_INFO_RSP)SendSynchronous(new ZB_GET_DEVICE_INFO(type));
+            UTIL_GET_DEVICE_INFO_RESPONSE response = (UTIL_GET_DEVICE_INFO_RESPONSE)SendSynchronous(new ZB_GET_DEVICE_INFO(type));
 
             if (response == null)
             {
-                _logger.LogWarning("Failed GetDeviceInfo for {Type} due to null value", type);
+                //Console.WriteLine("Failed GetDeviceInfo for {0} due to null value", type);
                 return null;
             }
-            else if (response.Param != type)
-            {
-                _logger.LogWarning("Failed GetDeviceInfo for {Type} non matching response returned {Param}", type, response.Param);
-                return null;
-            }
-            else
-            {
-                _logger.LogTrace("GetDeviceInfo for {Type} done", type);
-                return response.Value;
-            }
+            //else if (response.Param != type)
+            //{
+            //    //Console.WriteLine("Failed GetDeviceInfo for {0} non matching response returned {Param}", type, response.Param);
+            //    return null;
+            //}
+            //else
+            //{
+            //    //Console.WriteLine("GetDeviceInfo for {0} done", type);
+            //    return response.Value;
+            //}
+
+            return response;
         }
 
         public int GetZigBeeNodeMode()
         {
-            ZB_READ_CONFIGURATION_RSP response = (ZB_READ_CONFIGURATION_RSP)SendSynchronous(new ZB_READ_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_LOGICAL_TYPE));
+            SYS_OSAL_NVLENGTH_RESPONSE lenResponse = (SYS_OSAL_NVLENGTH_RESPONSE)SendSynchronous(new SYS_OSAL_NVLENGTH((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_LOGICAL_TYPE));
 
-            if (response != null && response.Status == 0)
+            SYS_OSAL_NVREAD_RESPONSE response = (SYS_OSAL_NVREAD_RESPONSE)SendSynchronous(new SYS_OSAL_NVREAD((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_LOGICAL_TYPE));
+
+            if (response != null && response.Status == 0 && lenResponse.Len == 1)
             {
                 return response.Value[0];
             }
@@ -1267,20 +1382,44 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
         public ZigBeeKey GetZigBeeNetworkKey()
         {
-            ZB_READ_CONFIGURATION_RSP response = (ZB_READ_CONFIGURATION_RSP)SendSynchronous(new ZB_READ_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEY));
-
-            if (response != null && response.Status == 0)
+            var version = this.GetStackVersion();
+            if (version.Contains("Product=1"))
             {
-                byte[] data = new byte[16];
+                SYS_OSAL_NVLENGTH_RESPONSE lenResponse = (SYS_OSAL_NVLENGTH_RESPONSE)SendSynchronous(new SYS_OSAL_NVLENGTH((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEY));
 
-                Array.Copy(response.Value, data, 16);
+                SYS_OSAL_NVREAD_RESPONSE response = (SYS_OSAL_NVREAD_RESPONSE)SendSynchronous(new SYS_OSAL_NVREAD((ushort)ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEY));
 
-                return new ZigBeeKey(data);
+                if (response != null && response.Status == 0 && lenResponse.Len == 16)
+                {
+                    byte[] data = new byte[16];
+
+                    Array.Copy(response.Value, data, 16);
+
+                    return new ZigBeeKey(data);
+                }
+                else
+                {
+                    //Console.WriteLine("Error reading zigbee network key: {0}" + response.Status);
+                    return null;
+                }
             }
             else
             {
-                _logger.LogError("Error reading zigbee network key: {Status}" + response.Status);
-                return null;
+                ZB_READ_CONFIGURATION_RSP response = (ZB_READ_CONFIGURATION_RSP)SendSynchronous(new ZB_READ_CONFIGURATION(ZB_WRITE_CONFIGURATION.CONFIG_ID.ZCD_NV_PRECFGKEY));
+
+                if (response != null && response.Status == 0)
+                {
+                    byte[] data = new byte[16];
+
+                    Array.Copy(response.Value, data, 16);
+
+                    return new ZigBeeKey(data);
+                }
+                else
+                {
+                    //Console.WriteLine("Error reading zigbee network key: {0}" + response.Status);
+                    return null;
+                }
             }
         }
 
@@ -1341,11 +1480,11 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
 
                     if (NewDevice(new AF_REGISTER(_ep[i], _prof[i], _dev[i], _ver[i], input, output)))
                     {
-                        _logger.LogDebug("Custom device {Dev} registered at endpoint {Ep}", _dev[i], _ep[i]);
+                        //Console.WriteLine("Custom device {0} registered at endpoint {1}", _dev[i], _ep[i]);
                     }
                     else
                     {
-                        _logger.LogDebug("Custom device {Dev} registration failed at endpoint {Ep}", _dev[i], _ep[i]);
+                        //Console.WriteLine("Custom device {0} registration failed at endpoint {1}", _dev[i], _ep[i]);
                     }
                 }
             }
@@ -1363,7 +1502,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Network
             }
             catch (Exception e)
             {
-                _logger.LogError("Error in device register: {Exception}", e.Message);
+                //Console.WriteLine("Error in device register.{0}", e);
             }
 
             return false;

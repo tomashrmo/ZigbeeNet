@@ -1,5 +1,5 @@
 ﻿using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace ZigBeeNet.ZCL
         /// <summary>
         /// ILogger for logging events for this class
         /// </summary>
-        private static ILogger _logger = LogManager.GetLog<ZclCluster>();
+        //private static ILogger _logger = LogManager.GetLog<ZclCluster>();
 
         /// <summary>
         /// The <see cref="ZigBeeNetworkManager"> to which this device belongs
@@ -264,15 +264,15 @@ namespace ZigBeeNet.ZCL
         /// <returns>an object containing the value, or null</returns>
         public async Task<object> ReadAttributeValue(ushort attributeId)
         {
-            _logger.LogDebug("ReadAttributeValue request attribute {AttributeId}", attributeId);
+            //Console.WriteLine("ReadAttributeValue request attribute {AttributeId}", attributeId);
             CommandResult result;
             try
             {
                 result = await ReadAttribute(attributeId);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                _logger.LogDebug(e, "ReadAttributeValue exception");
+                //Console.WriteLine(e, "ReadAttributeValue exception");
                 return null;
             }
 
@@ -511,7 +511,7 @@ namespace ZigBeeNet.ZCL
 
                 if (!_clientAttributes.TryGetValue(id, out clientAttribute))
                 {
-                    _logger.LogInformation("Unkown client attribute with id {AttributeId} reported for cluster {Cluster}", id, this._clusterId);
+                    //Console.WriteLine("Unkown client attribute with id {AttributeId} reported for cluster {Cluster}", id, this._clusterId);
                 }
                 return clientAttribute;
             }
@@ -522,7 +522,7 @@ namespace ZigBeeNet.ZCL
                 // It can be that device reports unknown id
                 if (!_serverAttributes.TryGetValue(id, out serverAttribute))
                 {
-                    _logger.LogInformation("Unkown server attribute with id {AttributeId} reported by device for cluster {Cluster}", id, this._clusterId);
+                    //Console.WriteLine("Unkown server attribute with id {AttributeId} reported by device for cluster {Cluster}", id, this._clusterId);
                 }
                 return serverAttribute;
             }
@@ -1145,7 +1145,7 @@ namespace ZigBeeNet.ZCL
             ZclAttribute attribute = GetAttribute(attributeId);
             if (attribute == null)
             {
-                _logger.LogDebug("{EndPoint}: Unknown {IsClient} attribute in {AttributeId} cluster {ClusterId}", _zigbeeEndpoint.GetEndpointAddress(), (_isClient ? "Client" : "Server"), attributeId, _clusterId);
+                //Console.WriteLine("{EndPoint}: Unknown {IsClient} attribute in {AttributeId} cluster {ClusterId}", _zigbeeEndpoint.GetEndpointAddress(), (_isClient ? "Client" : "Server"), attributeId, _clusterId);
             }
             else
             {
@@ -1166,7 +1166,7 @@ namespace ZigBeeNet.ZCL
             {
                 if (record.Status != ZclStatus.SUCCESS)
                 {
-                    _logger.LogDebug("{EndpointAddress}: Error reading attribute {AttributeIdentifier} in cluster {clusterId} - {Status}", _zigbeeEndpoint.GetEndpointAddress(), record.AttributeIdentifier, _clusterId, record.Status);
+                    //Console.WriteLine("{EndpointAddress}: Error reading attribute {AttributeIdentifier} in cluster {clusterId} - {Status}", _zigbeeEndpoint.GetEndpointAddress(), record.AttributeIdentifier, _clusterId, record.Status);
                     continue;
                 }
 
@@ -1236,9 +1236,9 @@ namespace ZigBeeNet.ZCL
             {
                 return commands[commandId]();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                _logger.LogDebug(e, "Error instantiating cluster command {ClusterName}, id={CommandId}", _clusterName, commandId);
+                //Console.WriteLine(e, "Error instantiating cluster command {ClusterName}, id={CommandId}", _clusterName, commandId);
             }
             return null;
         }

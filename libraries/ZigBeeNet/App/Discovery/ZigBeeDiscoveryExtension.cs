@@ -10,7 +10,7 @@ using ZigBeeNet.App;
 using ZigBeeNet.App.Discovery;
 using ZigBeeNet.ZDO.Command;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 
 namespace ZigBeeNet.App.Discovery
 {
@@ -30,7 +30,7 @@ namespace ZigBeeNet.App.Discovery
         /// <summary>
         /// ILogger for logging events for this class
         /// </summary>
-        private static ILogger _logger = LogManager.GetLog<ZigBeeDiscoveryExtension>();
+        //private static ILogger _logger = LogManager.GetLog<ZigBeeDiscoveryExtension>();
         
         /// <summary>
         /// The ZigBee network <see cref="ZigBeeNetworkDiscoverer"/>. The discover is responsible for monitoring the network for 
@@ -73,11 +73,11 @@ namespace ZigBeeNet.App.Discovery
         {
             if (extensionStarted)
             {
-                _logger.LogDebug("DISCOVERY Extension: Already started");
+                //Console.WriteLine("DISCOVERY Extension: Already started");
                 return ZigBeeStatus.INVALID_STATE;
             }
 
-            _logger.LogDebug("DISCOVERY Extension: Startup");
+            //Console.WriteLine("DISCOVERY Extension: Startup");
 
             _networkManager.AddNetworkNodeListener(this);
             _networkManager.AddCommandListener(this);
@@ -112,7 +112,7 @@ namespace ZigBeeNet.App.Discovery
             }
             extensionStarted = false;
 
-            _logger.LogDebug("DISCOVERY Extension: Shutdown");
+            //Console.WriteLine("DISCOVERY Extension: Shutdown");
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace ZigBeeNet.App.Discovery
                 return;
             }
 
-            _logger.LogDebug("DISCOVERY Extension: Set mesh update interval to {UpdatePeriod} seconds", updatePeriod);
+            //Console.WriteLine("DISCOVERY Extension: Set mesh update interval to {UpdatePeriod} seconds", updatePeriod);
 
             if (updatePeriod == 0)
             {
@@ -159,7 +159,7 @@ namespace ZigBeeNet.App.Discovery
         /// </summary>
         public void Refresh()
         {
-            _logger.LogDebug("DISCOVERY Extension: Start mesh update task with interval of {UpdatePeriod} seconds", _updatePeriod);
+            //Console.WriteLine("DISCOVERY Extension: Start mesh update task with interval of {UpdatePeriod} seconds", _updatePeriod);
 
             // Delay the start slightly to allow any further processing to complete.
             // Also allows successive responses to filter through without retriggering an update.
@@ -171,6 +171,7 @@ namespace ZigBeeNet.App.Discovery
             lock (_nodeDiscovery)
             {
                 StartDiscoveryIfNecessary(node);
+
             }
         }
 
@@ -198,13 +199,13 @@ namespace ZigBeeNet.App.Discovery
             // either there is no node discoverer or it has finished its tasks unsuccessfully
             if (nodeDiscoverer == null || (nodeDiscoverer.IsFinished && !nodeDiscoverer.IsSuccessful))
             {
-                _logger.LogDebug("{IeeeAddress}: DISCOVERY Extension: Adding discoverer for node", node.IeeeAddress);
+                //Log.Debug("{IeeeAddress}: DISCOVERY Extension: Adding discoverer for node", node.IeeeAddress);
                 StartDiscovery(node);
             }
             else if (!nodeDiscoverer.IsFinished)
             {
                 // kill old node discoverer and create a new one
-                _logger.LogDebug("{IeeeAddress}: DISCOVERY Extension: Creating new discoverer for node", node.IeeeAddress);
+                //Log.Debug("{IeeeAddress}: DISCOVERY Extension: Creating new discoverer for node", node.IeeeAddress);
                 StopDiscovery(node);
                 StartDiscovery(node);
             }
@@ -212,7 +213,7 @@ namespace ZigBeeNet.App.Discovery
 
         public void NodeRemoved(ZigBeeNode node)
         {
-            _logger.LogDebug("{IeeeAddress}: DISCOVERY Extension: Removing discoverer", node.IeeeAddress);
+            //Console.WriteLine("{IeeeAddress}: DISCOVERY Extension: Removing discoverer", node.IeeeAddress);
             StopDiscovery(node);
         }
 
@@ -221,8 +222,9 @@ namespace ZigBeeNet.App.Discovery
             // Listen for specific commands that may indicate that the mesh has changed
             if (command is ManagementLeaveResponse || command is DeviceAnnounce)
             {
-                _logger.LogDebug("DISCOVERY Extension: Mesh related command received. Triggering mesh update.");
-                Refresh();
+                //Console.WriteLine("DISCOVERY Extension: Mesh related command received. Triggering mesh update.");
+                // do not do refresh
+                //Refresh();
             }
         }
 
@@ -252,7 +254,8 @@ namespace ZigBeeNet.App.Discovery
             lock (_nodeDiscovery)
             {
                 ZigBeeNodeServiceDiscoverer nodeDiscoverer = new ZigBeeNodeServiceDiscoverer(_networkManager, node);
-                nodeDiscoverer.MeshUpdateTasks = MeshUpdateTasks;
+                // do not do mesh discovery task
+                //nodeDiscoverer.MeshUpdateTasks = MeshUpdateTasks;
                 _nodeDiscovery[node.IeeeAddress] = nodeDiscoverer;
                 _ = nodeDiscoverer.StartDiscovery();
             }
@@ -284,10 +287,10 @@ namespace ZigBeeNet.App.Discovery
             {
                 lock (_nodeDiscovery)
                 {
-                    _logger.LogDebug("DISCOVERY Extension: Starting mesh update");
+                    Console.WriteLine("DISCOVERY Extension: Starting mesh update");
                     foreach (ZigBeeNodeServiceDiscoverer node in _nodeDiscovery.Values)
                     {
-                        _logger.LogDebug("{IeeeAddress}: DISCOVERY Extension: Starting mesh update", node.Node.IeeeAddress);
+                        Console.WriteLine("{0}: DISCOVERY Extension: Starting mesh update", node.Node.IeeeAddress);
                         node.MeshUpdateTasks = MeshUpdateTasks;
                         node.UpdateMesh();
                     }

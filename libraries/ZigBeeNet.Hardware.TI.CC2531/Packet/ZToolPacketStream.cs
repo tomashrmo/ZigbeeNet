@@ -13,12 +13,12 @@ using ZigBeeNet.Transport;
 using ZigBeeNet.Hardware.TI.CC2531.Packet.UTIL;
 using ZigBeeNet.Hardware.TI.CC2531.Extensions;
 using ZigBeeNet.Util;
-using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging;
 namespace ZigBeeNet.Hardware.TI.CC2531.Packet
 {
     public class ZToolPacketStream : IByteArrayInputStream
     {
-        static private readonly ILogger _logger = LogManager.GetLog<ZToolPacketStream>();
+        //static private readonly ILogger _logger = LogManager.GetLog<ZToolPacketStream>();
 
         private int _length;
 
@@ -48,7 +48,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
                 ZToolPacket response;
                 // int byteLength = this.read("Length");
                 _length = Read("Length");
-                // _logger.Logdebug("data length is " + ByteUtils.formatByte(length.getLength()));
+                // //Console.WriteLine("data length is " + ByteUtils.formatByte(length.getLength()));
                 byte[] frameData;
                 byte apiIdMSB = Read("API PROFILE_ID_HOME_AUTOMATION MSB");
                 byte apiIdLSB = Read("API PROFILE_ID_HOME_AUTOMATION LSB");
@@ -57,7 +57,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
                 // generic = true;
                 if (_generic)
                 {
-                    // _logger.LogInformation("Parsing data as generic");
+                    // //Console.WriteLine("Parsing data as generic");
                     int i = 0;
                     frameData = new byte[_length];
                     // Read all data bytes without parsing
@@ -79,7 +79,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
                 // setDone(true);
                 if (fcs != response.FCS)
                 {
-                    // _logger.Logdebug("Checksum of packet failed: received =" + fcs + " expected = " + response.getFCS());
+                    // //Console.WriteLine("Checksum of packet failed: received =" + fcs + " expected = " + response.getFCS());
                     throw new ZToolParseException("Packet checksum failed");
                 }
                 if (!Done)
@@ -91,7 +91,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
             }
             catch (Exception e)
             {
-                _logger.LogError("Packet parsing failed due to exception: {Exception}", e.Message);
+                //Console.WriteLine("Packet parsing failed due to exception.{0}", e);
                 exception = e;
             }
             ZToolPacket exceptionResponse = new ErrorPacket();
@@ -143,6 +143,12 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
                     return new SYS_RESET_RESPONSE(payload);
                 case ZToolCMD.SYS_VERSION_RESPONSE:
                     return new SYS_VERSION_RESPONSE(payload);
+                case ZToolCMD.SYS_OSAL_NVREAD_RESPONSE:
+                    return new SYS_OSAL_NVREAD_RESPONSE(payload);
+                case ZToolCMD.SYS_OSAL_NVWRITE_RESPONSE:
+                    return new SYS_OSAL_NVWRITE_RESPONSE(payload);
+                case ZToolCMD.SYS_OSAL_NVLENGTH_RESPONSE:
+                    return new SYS_OSAL_NVLENGTH_RESPONSE(payload);
                 case ZToolCMD.SYS_PING_RESPONSE:
                     return new SYS_PING_RESPONSE(payload);
                 case ZToolCMD.SYS_RPC_ERROR:
@@ -281,7 +287,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
                 case ZToolCMD.UTIL_LED_CONTROL_RESPONSE:
                     return new UTIL_LED_CONTROL_RESPONSE(payload);
                 default:
-                    _logger.LogWarning($"Unknown command ID: {{Command}} [0x{cmd:X4}]", cmd);
+                    //Console.WriteLine("Unknown command ID: {0}", cmd);
                     return new ZToolPacket(cmd, payload);
             }
         }
@@ -289,7 +295,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
         public byte Read(string context)
         {
             byte b = Read();
-            _logger.LogTrace("Read {Context}  byte, val is {Byte}", context, b);
+            //Console.WriteLine("Read {0}  byte, val is {1}", context, b);
             return b;
         }
 
@@ -314,7 +320,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
             // when verifying checksum you must add the checksum that we are verifying
             // when computing checksum, do not include start byte; when verifying, include checksum
             Checksum.AddByte(b.Value);
-            // _logger.Logdebug("Read byte " + ByteUtils.formatByte(b) + " at position " + bytesRead + ", data length is " +
+            // //Console.WriteLine("Read byte " + ByteUtils.formatByte(b) + " at position " + bytesRead + ", data length is " +
             // this.length.getLength() + ", #escapeBytes is " + escapeBytes + ", remaining bytes is " +
             // this.getRemainingBytes());
 
@@ -323,7 +329,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
                 // this is checksum and final byte of packet
                 Done = true;
 
-                // _logger.Logdebug("Checksum byte is " + b);
+                // //Console.WriteLine("Checksum byte is " + b);
                 ////
                 /// if (!checksum.verify()) {/////////////Maybe expected in ZTool is 0x00, not FF//////////////////// throw
                 /// new ZToolParseException("Checksum is incorrect.  Expected 0xff, but got " + checksum.getChecksum()); }
@@ -341,7 +347,7 @@ namespace ZigBeeNet.Hardware.TI.CC2531.Packet
             for (int i = 0; i < value.Length; i++)
             {
                 value[i] = Read("Remaining bytes " + (value.Length - i));
-                // _logger.Logdebug("byte " + i + " is " + value[i]);
+                // //Console.WriteLine("byte " + i + " is " + value[i]);
             }
 
             return value;
